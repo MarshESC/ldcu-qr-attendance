@@ -19,6 +19,10 @@
 	let attendedCount = $derived(guests.filter((g) => g.attended).length);
 	let totalCount = $derived(guests.length);
 
+	// Pagination
+	const PAGE_SIZE = 10;
+	let currentPage = $state(1);
+
 	let filteredGuests = $derived.by(() => {
 		let list = [...guests];
 
@@ -60,6 +64,22 @@
 
 		return list;
 	});
+
+	let totalPages = $derived(Math.max(1, Math.ceil(filteredGuests.length / PAGE_SIZE)));
+	let pagedGuests = $derived(
+		filteredGuests.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+	);
+
+	// Reset to page 1 when filter/sort changes
+	$effect(() => {
+		filter;
+		sort;
+		currentPage = 1;
+	});
+
+	function goToPage(page: number) {
+		currentPage = Math.max(1, Math.min(page, totalPages));
+	}
 
 	export async function loadGuests() {
 		if (!loading) refreshing = true;
@@ -155,9 +175,16 @@
 						<option value="newest">Newest</option>
 						<option value="oldest">Oldest</option>
 					</select>
-					<button class="refresh-btn" class:spinning={refreshing} onclick={() => loadGuests()} aria-label="Refresh">
+					<button
+						class="refresh-btn"
+						class:spinning={refreshing}
+						onclick={() => loadGuests()}
+						aria-label="Refresh"
+					>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="#800000">
-							<path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+							<path
+								d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"
+							/>
 						</svg>
 					</button>
 				</div>
@@ -171,11 +198,20 @@
 					</div>
 				{:else if filteredGuests.length === 0}
 					<div class="empty-state">
-						<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(128,0,0,0.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/>
-							<circle cx="9" cy="7" r="4"/>
-							<path d="M23 21v-2a4 4 0 00-3-3.87"/>
-							<path d="M16 3.13a4 4 0 010 7.75"/>
+						<svg
+							width="40"
+							height="40"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="rgba(128,0,0,0.3)"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2" />
+							<circle cx="9" cy="7" r="4" />
+							<path d="M23 21v-2a4 4 0 00-3-3.87" />
+							<path d="M16 3.13a4 4 0 010 7.75" />
 						</svg>
 						<p>No guests found</p>
 					</div>
@@ -191,9 +227,9 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each filteredGuests as guest, i}
+								{#each pagedGuests as guest, i}
 									<tr>
-										<td class="col-num">{i + 1}</td>
+										<td class="col-num">{(currentPage - 1) * PAGE_SIZE + i + 1}</td>
 										<td class="col-name">
 											<div class="guest-name">{guest.name}</div>
 											{#if guest.email}
@@ -218,6 +254,30 @@
 					</div>
 				{/if}
 			</div>
+
+			{#if !loading && filteredGuests.length > 0}
+				<div class="pagination">
+					{#if currentPage > 1}
+						<button class="page-btn" onclick={() => goToPage(1)} aria-label="First page">«</button>
+						<button
+							class="page-btn"
+							onclick={() => goToPage(currentPage - 1)}
+							aria-label="Previous page">‹</button
+						>
+					{/if}
+					<span class="page-info">{currentPage} / {totalPages}</span>
+					{#if currentPage < totalPages}
+						<button
+							class="page-btn"
+							onclick={() => goToPage(currentPage + 1)}
+							aria-label="Next page">›</button
+						>
+						<button class="page-btn" onclick={() => goToPage(totalPages)} aria-label="Last page"
+							>»</button
+						>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	</div>
 </div>
@@ -230,13 +290,22 @@
 		margin: 0 auto;
 		padding: 10px 10px 0;
 		animation: fadeInUp 0.4s ease-out;
+		/* Fill height: viewport minus navbar (~56px) minus dock area (~80px) minus top padding (10px) */
+		height: calc(100dvh - 56px - 80px - 10px);
 	}
 
 	.main-section {
-		padding-bottom: 90px;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
 	}
 
 	.attendee-panel {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
 		background: #ffffff;
 		border: 1.5px solid #800000;
 		border-radius: 16px 16px 12px 12px;
@@ -251,7 +320,7 @@
 		padding: 12px 14px;
 		gap: 10px;
 		flex-wrap: wrap;
-		border-bottom: 1.5px solid rgba(128, 0, 0, 0.15);
+		border-bottom: 1.5px solid #800000;
 	}
 
 	.header-left {
@@ -326,9 +395,63 @@
 	}
 
 	.panel-body {
-		max-height: calc(100dvh - 200px);
+		flex: 1;
 		overflow-y: auto;
 		overflow-x: auto;
+		min-height: 0;
+	}
+
+	.pagination {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		padding: 10px 14px;
+		border-top: 1.5px solid #800000;
+		background: #fff;
+		flex-shrink: 0;
+	}
+
+	.page-btn {
+		width: 32px;
+		height: 32px;
+		border-radius: 8px;
+		border: none;
+		background: #800000;
+		color: #ffffff;
+		font-size: 15px;
+		font-weight: 700;
+		font-family: 'Inter', sans-serif;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		line-height: 1;
+		box-shadow: 0 2px 6px rgba(128, 0, 0, 0.3);
+		transition:
+			background 0.15s,
+			transform 0.1s,
+			box-shadow 0.15s;
+	}
+
+	.page-btn:hover {
+		background: #9a0000;
+		box-shadow: 0 4px 10px rgba(128, 0, 0, 0.4);
+		transform: translateY(-1px);
+	}
+
+	.page-btn:active {
+		background: #5c0000;
+		box-shadow: 0 1px 3px rgba(128, 0, 0, 0.25);
+		transform: translateY(0);
+	}
+
+	.page-info {
+		font-size: 12px;
+		font-weight: 600;
+		color: #800000;
+		min-width: 52px;
+		text-align: center;
 	}
 
 	.table-scroll {
@@ -351,8 +474,8 @@
 		letter-spacing: 0.5px;
 		padding: 10px 12px;
 		text-align: left;
-		border-bottom: 1.5px solid rgba(128, 0, 0, 0.2);
-		border-right: 1px solid rgba(128, 0, 0, 0.1);
+		border-bottom: 1.5px solid #800000;
+		border-right: 1px solid #800000;
 		z-index: 1;
 	}
 
@@ -364,8 +487,8 @@
 		padding: 10px;
 		color: #3a1010;
 		font-size: 12px;
-		border-bottom: 1px solid rgba(128, 0, 0, 0.15);
-		border-right: 1px solid rgba(128, 0, 0, 0.08);
+		border-bottom: 1px solid #800000;
+		border-right: 1px solid #800000;
 	}
 
 	.guest-table td:last-child {
@@ -459,13 +582,23 @@
 	}
 
 	@keyframes spin {
-		from { transform: rotate(0deg); }
-		to { transform: rotate(360deg); }
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	@keyframes fadeInUp {
-		from { opacity: 0; transform: translateY(20px); }
-		to { opacity: 1; transform: translateY(0); }
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
 	/* >=480px */
@@ -484,10 +617,12 @@
 		.page-layout {
 			padding: 16px 16px 0;
 			max-width: 1400px;
+			/* On desktop the dock is hidden; navbar is taller (~64px) */
+			height: calc(100dvh - 64px - 20px);
 		}
 
 		.main-section {
-			padding-bottom: 10px;
+			padding-bottom: 0;
 		}
 
 		.attendee-panel {
