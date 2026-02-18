@@ -24,9 +24,15 @@
 		try {
 			const { Html5Qrcode } = await import('html5-qrcode');
 			html5Qrcode = new Html5Qrcode('reader');
+
+			// Size the scan box to 72% of the shorter screen edge so it fills
+			// as much of the viewfinder as possible on any device
+			const shortSide = Math.min(window.innerWidth, window.innerHeight);
+			const boxSize = Math.round(shortSide * 0.72);
+
 			await html5Qrcode.start(
 				{ facingMode: 'environment' },
-				{ fps: 10, qrbox: { width: 250, height: 250 } },
+				{ fps: 10, qrbox: { width: boxSize, height: boxSize } },
 				onScanSuccess,
 				() => {}
 			);
@@ -122,9 +128,17 @@
 		<div class="modal-header">
 			<h2>QR Code Scanner</h2>
 			<button class="close-btn" onclick={handleClose} aria-label="Close scanner">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-					<line x1="18" y1="6" x2="6" y2="18"/>
-					<line x1="6" y1="6" x2="18" y2="18"/>
+				<svg
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.5"
+					stroke-linecap="round"
+				>
+					<line x1="18" y1="6" x2="6" y2="18" />
+					<line x1="6" y1="6" x2="18" y2="18" />
 				</svg>
 			</button>
 		</div>
@@ -133,19 +147,13 @@
 			<div id="reader"></div>
 			<!-- QR Focus Overlay -->
 			<div class="scan-overlay">
-				<div class="scan-mask-top"></div>
-				<div class="scan-middle">
-					<div class="scan-mask-side"></div>
-					<div class="scan-focus">
-						<div class="corner tl"></div>
-						<div class="corner tr"></div>
-						<div class="corner bl"></div>
-						<div class="corner br"></div>
-						<div class="scan-line"></div>
-					</div>
-					<div class="scan-mask-side"></div>
+				<div class="scan-focus">
+					<div class="corner tl"></div>
+					<div class="corner tr"></div>
+					<div class="corner bl"></div>
+					<div class="corner br"></div>
+					<div class="scan-line"></div>
 				</div>
-				<div class="scan-mask-bottom"></div>
 			</div>
 		</div>
 
@@ -183,7 +191,9 @@
 		z-index: 200;
 		opacity: 0;
 		visibility: hidden;
-		transition: opacity 0.25s ease, visibility 0.25s ease;
+		transition:
+			opacity 0.25s ease,
+			visibility 0.25s ease;
 	}
 
 	.backdrop.visible {
@@ -191,26 +201,48 @@
 		visibility: visible;
 	}
 
+	/* Mobile-first: fill the entire screen so the camera has maximum space */
 	.modal {
 		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%) scale(0.92);
-		max-width: 360px;
-		width: calc(100% - 32px);
+		inset: 0;
+		max-width: none;
+		width: 100%;
 		background: #800000;
-		border-radius: 20px;
+		border-radius: 0;
 		z-index: 201;
 		overflow: hidden;
 		opacity: 0;
 		visibility: hidden;
-		transition: opacity 0.25s ease, visibility 0.25s ease, transform 0.25s ease;
+		transform: scale(0.96);
+		transition:
+			opacity 0.25s ease,
+			visibility 0.25s ease,
+			transform 0.25s ease;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.modal.visible {
 		opacity: 1;
 		visibility: visible;
-		transform: translate(-50%, -50%) scale(1);
+		transform: scale(1);
+	}
+
+	/* On larger screens restore the centred card style */
+	@media (min-width: 480px) {
+		.modal {
+			inset: auto;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%) scale(0.92);
+			max-width: 400px;
+			width: calc(100% - 32px);
+			border-radius: 20px;
+			max-height: 90dvh;
+		}
+		.modal.visible {
+			transform: translate(-50%, -50%) scale(1);
+		}
 	}
 
 	.modal-header {
@@ -247,15 +279,28 @@
 
 	.camera-area {
 		position: relative;
-		width: calc(100% - 32px);
-		aspect-ratio: 1;
+		/* Fill all available vertical space — the camera is the priority */
+		flex: 1;
+		min-height: 0;
+		width: 100%;
 		background: #000;
-		margin: 0 auto;
-		border-radius: 12px;
+		margin: 0;
+		border-radius: 0;
 		overflow: hidden;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+	}
+
+	@media (min-width: 480px) {
+		.camera-area {
+			width: calc(100% - 32px);
+			aspect-ratio: 1;
+			flex: none;
+			margin: 0 auto;
+			border-radius: 12px;
+			max-height: none;
+		}
 	}
 
 	/* Force the html5-qrcode container to fill the camera area */
@@ -330,32 +375,29 @@
 	.scan-overlay {
 		position: absolute;
 		inset: 0;
-		display: flex;
-		flex-direction: column;
 		pointer-events: none;
 		z-index: 2;
-	}
-
-	.scan-mask-top,
-	.scan-mask-bottom {
-		flex: 1;
-		background: rgba(0, 0, 0, 0.5);
-	}
-
-	.scan-middle {
 		display: flex;
-		height: 72%;
+		align-items: center;
+		justify-content: center;
 	}
 
-	.scan-mask-side {
-		flex: 1;
+	/* Dark mask covering the full overlay, punched out by the focus box */
+	.scan-overlay::before {
+		content: '';
+		position: absolute;
+		inset: 0;
 		background: rgba(0, 0, 0, 0.5);
 	}
 
 	.scan-focus {
 		position: relative;
-		width: 88%;
-		aspect-ratio: 1;
+		z-index: 1;
+		/* Square that fits within the camera area with padding on all sides */
+		width: min(72vw, 72vh, 260px);
+		height: min(72vw, 72vh, 260px);
+		/* Punch out the dark mask behind this element */
+		box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
 	}
 
 	/* Corner brackets */
@@ -369,28 +411,32 @@
 	}
 
 	.corner.tl {
-		top: 0; left: 0;
+		top: 0;
+		left: 0;
 		border-top-width: 3px;
 		border-left-width: 3px;
 		border-top-left-radius: 6px;
 	}
 
 	.corner.tr {
-		top: 0; right: 0;
+		top: 0;
+		right: 0;
 		border-top-width: 3px;
 		border-right-width: 3px;
 		border-top-right-radius: 6px;
 	}
 
 	.corner.bl {
-		bottom: 0; left: 0;
+		bottom: 0;
+		left: 0;
 		border-bottom-width: 3px;
 		border-left-width: 3px;
 		border-bottom-left-radius: 6px;
 	}
 
 	.corner.br {
-		bottom: 0; right: 0;
+		bottom: 0;
+		right: 0;
 		border-bottom-width: 3px;
 		border-right-width: 3px;
 		border-bottom-right-radius: 6px;
@@ -408,15 +454,24 @@
 	}
 
 	@keyframes scanLine {
-		0%, 100% { top: 8px; opacity: 0.6; }
-		50% { top: calc(100% - 10px); opacity: 1; }
+		0%,
+		100% {
+			top: 8px;
+			opacity: 0.6;
+		}
+		50% {
+			top: calc(100% - 10px);
+			opacity: 1;
+		}
 	}
 
 	.controls {
-		padding: 16px;
+		padding: 12px 16px;
+		padding-bottom: max(12px, env(safe-area-inset-bottom));
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
+		gap: 10px;
+		flex-shrink: 0;
 	}
 
 	.status-bar {
@@ -537,7 +592,12 @@
 	}
 
 	@keyframes pulse-dot {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.3; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.3;
+		}
 	}
 </style>
