@@ -18,7 +18,9 @@
 	let sort = $state('default');
 	let pageSize = $state(25);
 	let search = $state('');
+	let searchFocused = $state(false);
 	let intervalId: ReturnType<typeof setInterval> | null = null;
+	let showFilters = $state(false);
 
 	let attendedCount = $derived(guests.filter((g) => g.attended).length);
 	let totalCount = $derived(guests.length);
@@ -32,6 +34,18 @@
 
 	// Pagination
 	let currentPage = $state(1);
+
+	let searchSuggestions = $derived.by(() => {
+		const q = search.trim().toLowerCase();
+		if (!q) return [];
+		return guests
+			.filter(
+				(g) =>
+					(g.name && g.name.toLowerCase().includes(q)) ||
+					(g.email && g.email.toLowerCase().includes(q))
+			)
+			.slice(0, 5); // top 5 matches
+	});
 
 	let filteredGuests = $derived.by(() => {
 		let list = [...guests];
@@ -52,7 +66,9 @@
 		const q = search.trim().toLowerCase();
 		if (q) {
 			list = list.filter(
-				(g) => g.name.toLowerCase().includes(q) || g.email.toLowerCase().includes(q)
+				(g) =>
+					(g.name && g.name.toLowerCase().includes(q)) ||
+					(g.email && g.email.toLowerCase().includes(q))
 			);
 		}
 
@@ -105,6 +121,11 @@
 
 	function goToPage(page: number) {
 		currentPage = Math.max(1, Math.min(page, totalPages));
+	}
+
+	function selectSuggestion(guest: Guest) {
+		search = guest.name; // Fill search with the exact name
+		searchFocused = false;
 	}
 
 	export async function loadGuests() {
@@ -193,16 +214,29 @@
 					<span class="count-badge">{attendedCount}/{totalCount}</span>
 				</div>
 				<div class="header-right">
-					<select class="filter-select" bind:value={filter}>
+					<!-- Desktop: show selects inline -->
+					<select class="filter-select desktop-only" bind:value={filter}>
 						<option value="all">All</option>
 						<option value="attended">Attended</option>
 						<option value="notyet">Not Yet</option>
 					</select>
-					<select class="filter-select" bind:value={sort}>
+					<select class="filter-select desktop-only" bind:value={sort}>
 						<option value="default">Default</option>
 						<option value="newest">Newest</option>
 						<option value="oldest">Oldest</option>
 					</select>
+					<!-- Mobile: Filters toggle button -->
+					<button
+						class="filter-toggle-btn mobile-only"
+						class:active={showFilters}
+						onclick={() => (showFilters = !showFilters)}
+						aria-label="Toggle filters"
+					>
+						<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+							<path d="M3 4h18v2.5l-7 7V20l-4-2v-6.5L3 6.5V4z" />
+						</svg>
+						Filters
+					</button>
 					<button
 						class="refresh-btn"
 						class:spinning={refreshing}
@@ -217,44 +251,101 @@
 					</button>
 				</div>
 			</div>
+			<!-- Mobile filter drawer -->
+			{#if showFilters}
+				<div class="filter-drawer">
+					<div class="filter-drawer-row">
+						<span class="filter-drawer-label">Status</span>
+						<div class="filter-drawer-pills">
+							{#each [['all', 'All'], ['attended', 'Attended'], ['notyet', 'Not Yet']] as [val, label]}
+								<button
+									class="drawer-pill"
+									class:active={filter === val}
+									onclick={() => {
+										filter = val;
+									}}>{label}</button
+								>
+							{/each}
+						</div>
+					</div>
+					<div class="filter-drawer-row">
+						<span class="filter-drawer-label">Sort</span>
+						<div class="filter-drawer-pills">
+							{#each [['default', 'Default'], ['newest', 'Newest'], ['oldest', 'Oldest']] as [val, label]}
+								<button
+									class="drawer-pill"
+									class:active={sort === val}
+									onclick={() => {
+										sort = val;
+									}}>{label}</button
+								>
+							{/each}
+						</div>
+					</div>
+				</div>
+			{/if}
 
 			<div class="search-bar">
-				<div class="search-field">
-					<svg
-						class="search-icon"
-						width="15"
-						height="15"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<circle cx="11" cy="11" r="8" />
-						<line x1="21" y1="21" x2="16.65" y2="16.65" />
-					</svg>
-					<input
-						class="search-input"
-						type="search"
-						placeholder="Search name or email…"
-						bind:value={search}
-					/>
-					{#if search}
-						<button class="search-clear" onclick={() => (search = '')} aria-label="Clear search">
-							<svg
-								width="13"
-								height="13"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2.5"
-								stroke-linecap="round"
+				<div class="search-container">
+					<div class="search-field" class:focused={searchFocused}>
+						<svg
+							class="search-icon"
+							width="15"
+							height="15"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<circle cx="11" cy="11" r="8" />
+							<line x1="21" y1="21" x2="16.65" y2="16.65" />
+						</svg>
+						<input
+							class="search-input"
+							type="search"
+							placeholder="Search name or email…"
+							bind:value={search}
+							onfocus={() => (searchFocused = true)}
+							onblur={() => setTimeout(() => (searchFocused = false), 150)}
+						/>
+						{#if search}
+							<button
+								class="search-clear"
+								onclick={() => {
+									search = '';
+									searchFocused = true;
+								}}
+								aria-label="Clear search"
 							>
-								<line x1="18" y1="6" x2="6" y2="18" />
-								<line x1="6" y1="6" x2="18" y2="18" />
-							</svg>
-						</button>
+								<svg
+									width="13"
+									height="13"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2.5"
+									stroke-linecap="round"
+								>
+									<line x1="18" y1="6" x2="6" y2="18" />
+									<line x1="6" y1="6" x2="18" y2="18" />
+								</svg>
+							</button>
+						{/if}
+					</div>
+
+					{#if searchFocused && search.trim() && searchSuggestions.length > 0}
+						<div class="search-dropdown">
+							{#each searchSuggestions as suggestion}
+								<button class="suggestion-item" onmousedown={() => selectSuggestion(suggestion)}>
+									<div class="suggestion-name">{suggestion.name}</div>
+									{#if suggestion.email}
+										<div class="suggestion-email">{suggestion.email}</div>
+									{/if}
+								</button>
+							{/each}
+						</div>
 					{/if}
 				</div>
 			</div>
@@ -386,12 +477,11 @@
 	.page-layout {
 		display: flex;
 		flex-direction: column;
-		max-width: 1100px;
-		margin: 0 auto;
+		width: 100%;
 		padding: 10px 10px 0;
 		animation: fadeInUp 0.4s ease-out;
-		/* Fill height: viewport minus navbar (~56px) minus dock area (~80px) minus top padding (10px) */
-		height: calc(100dvh - 56px - 80px - 10px);
+		/* Fill full height below navbar; dock floats over content */
+		height: calc(100dvh - 56px);
 	}
 
 	.main-section {
@@ -408,7 +498,7 @@
 		min-height: 0;
 		background: #ffffff;
 		border: 1.5px solid #800000;
-		border-radius: 16px 16px 12px 12px;
+		border-radius: 0;
 		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 		overflow: hidden;
 	}
@@ -421,6 +511,7 @@
 		gap: 10px;
 		flex-wrap: wrap;
 		flex-shrink: 0;
+		background: #fff;
 	}
 
 	.header-left {
@@ -495,10 +586,15 @@
 	}
 
 	.search-bar {
-		padding: 10px 14px;
+		padding: 8px 14px;
 		border-bottom: 1.5px solid #800000;
 		background: #fff;
 		flex-shrink: 0;
+	}
+
+	.search-container {
+		position: relative;
+		width: 100%;
 	}
 
 	.search-field {
@@ -516,11 +612,63 @@
 			box-shadow 0.2s;
 	}
 
-	.search-field:focus-within {
+	.search-field.focused {
 		border-color: #800000;
 		background: #fff;
 		box-shadow: 0 0 0 3px rgba(128, 0, 0, 0.08);
 		color: #800000;
+	}
+
+	.search-dropdown {
+		position: absolute;
+		top: calc(100% + 4px);
+		left: 0;
+		width: 100%;
+		background: #fff;
+		border: 1.5px solid rgba(128, 0, 0, 0.15);
+		border-radius: 8px;
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+		z-index: 10;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.suggestion-item {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		padding: 10px 12px;
+		background: transparent;
+		border: none;
+		border-bottom: 1px solid rgba(128, 0, 0, 0.08);
+		cursor: pointer;
+		text-align: left;
+		transition: background 0.15s;
+	}
+
+	.suggestion-item:last-child {
+		border-bottom: none;
+	}
+
+	.suggestion-item:hover,
+	.suggestion-item:focus {
+		background: rgba(128, 0, 0, 0.04);
+		outline: none;
+	}
+
+	.suggestion-name {
+		color: #800000;
+		font-size: 13px;
+		font-weight: 600;
+		font-family: 'Inter', sans-serif;
+	}
+
+	.suggestion-email {
+		color: rgba(128, 0, 0, 0.5);
+		font-size: 11px;
+		margin-top: 2px;
+		font-family: 'Inter', sans-serif;
 	}
 
 	.search-icon {
@@ -625,11 +773,14 @@
 		display: grid;
 		grid-template-columns: 1fr auto 1fr;
 		align-items: center;
-		gap: 6px;
-		padding: 8px 14px;
+		gap: 4px;
+		padding: 6px 14px;
+		padding-bottom: calc(6px + env(safe-area-inset-bottom));
 		border-top: 1.5px solid #800000;
 		background: #fff;
 		flex-shrink: 0;
+		/* Extra bottom clearance so dock doesn't cover last row */
+		margin-bottom: 80px;
 	}
 
 	.pagination-left {
@@ -714,11 +865,91 @@
 		transform: translateY(0);
 	}
 
+	/* Mobile/desktop visibility helpers */
+	.mobile-only {
+		display: flex;
+	}
+	.desktop-only {
+		display: none;
+	}
+
+	/* Filter toggle button */
+	.filter-toggle-btn {
+		display: flex;
+		align-items: center;
+		gap: 5px;
+		padding: 5px 10px;
+		border-radius: 8px;
+		border: 1px solid rgba(128, 0, 0, 0.25);
+		background: rgba(128, 0, 0, 0.05);
+		color: rgba(128, 0, 0, 0.7);
+		font-family: 'Inter', sans-serif;
+		font-size: 11px;
+		font-weight: 600;
+		cursor: pointer;
+		transition:
+			background 0.15s,
+			color 0.15s;
+	}
+	.filter-toggle-btn.active {
+		background: #800000;
+		color: #fff;
+		border-color: #800000;
+	}
+
+	/* Filter drawer */
+	.filter-drawer {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding: 10px 14px;
+		background: rgba(128, 0, 0, 0.03);
+		border-bottom: 1px solid rgba(128, 0, 0, 0.15);
+		flex-shrink: 0;
+	}
+	.filter-drawer-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.filter-drawer-label {
+		font-size: 10px;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: rgba(128, 0, 0, 0.5);
+		min-width: 38px;
+	}
+	.filter-drawer-pills {
+		display: flex;
+		gap: 6px;
+		flex-wrap: wrap;
+	}
+	.drawer-pill {
+		padding: 4px 12px;
+		border-radius: 20px;
+		border: 1.5px solid rgba(128, 0, 0, 0.2);
+		background: transparent;
+		color: rgba(128, 0, 0, 0.6);
+		font-family: 'Inter', sans-serif;
+		font-size: 11px;
+		font-weight: 600;
+		cursor: pointer;
+		transition:
+			background 0.15s,
+			color 0.15s;
+	}
+	.drawer-pill.active {
+		background: #800000;
+		border-color: #800000;
+		color: #fff;
+	}
+
 	.page-info {
-		font-size: 12px;
+		font-size: 11px;
 		font-weight: 600;
 		color: #800000;
-		min-width: 52px;
+		min-width: 40px;
 		text-align: center;
 	}
 
@@ -883,10 +1114,10 @@
 	/* >=768px */
 	@media (min-width: 768px) {
 		.page-layout {
-			padding: 16px 16px 0;
-			max-width: 1400px;
-			/* On desktop the dock is hidden; navbar is taller (~64px) */
-			height: calc(100dvh - 64px - 20px);
+			padding: 0;
+			height: calc(100dvh - 64px);
+			max-width: none;
+			margin: 0;
 		}
 
 		.main-section {
@@ -894,15 +1125,18 @@
 		}
 
 		.attendee-panel {
-			border-radius: 20px;
+			border-radius: 0;
+			border-left: none;
+			border-right: none;
+			border-bottom: none;
 		}
 
 		.panel-header {
 			padding: 16px 20px;
 		}
 
-		.panel-title {
-			font-size: 18px;
+		.search-container {
+			max-width: 360px;
 		}
 
 		.guest-table th {
@@ -934,17 +1168,24 @@
 		.time-desktop {
 			display: inline;
 		}
-	}
 
-	/* sidebar-collapsed wider layout */
-	:global(.sidebar-collapsed-layout) .page-layout {
-		max-width: 1600px;
-	}
+		/* Show desktop filter selects, hide mobile-only elements */
+		.desktop-only {
+			display: flex;
+		}
+		.mobile-only {
+			display: none;
+		}
 
-	/* >=1024px */
-	@media (min-width: 1024px) {
-		.page-layout {
-			padding: 20px 24px 0;
+		/* Remove dock clearance on desktop */
+		.pagination {
+			margin-bottom: 0;
+			padding: 8px 20px;
+		}
+
+		.page-info {
+			font-size: 12px;
+			min-width: 52px;
 		}
 	}
 </style>

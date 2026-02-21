@@ -25,10 +25,10 @@
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="logo-icon" onclick={collapsed ? expand : undefined}>
-			<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<path d="M12 2L2 7l10 5 10-5-10-5z"/>
-				<path d="M2 17l10 5 10-5"/>
-				<path d="M2 12l10 5 10-5"/>
+			<svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+				<path
+					d="M3 11h2v2H3v-2zm4-4h2v2H7V7zm0 8h2v2H7v-2zm-4 0h2v2H3v-2zm0-8h2v2H3V7zm8-4h2v10h-2V3zm8 0h2v2h-2V3zM7 3h2v2H7V3zM3 3h2v2H3V3zm16 0h2v2h-2V3zm0 8h2v2h-2v-2zm0 8h2v2h-2v-2zm-4-4h2v6h-2v-6zm-4 2h2v4h-2v-4zm-4 0h2v4H7v-4zm12-6h2v2h-2v-2zm-8 0h2v2h-2v-2z"
+				/>
 			</svg>
 		</div>
 		{#if !collapsed}
@@ -36,9 +36,18 @@
 		{/if}
 		{#if !collapsed}
 			<button class="toggle-btn" onclick={toggle} aria-label="Collapse sidebar">
-				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<rect x="3" y="3" width="18" height="18" rx="2"/>
-					<line x1="9" y1="3" x2="9" y2="21"/>
+				<svg
+					width="18"
+					height="18"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<rect x="3" y="3" width="18" height="18" rx="2" />
+					<line x1="9" y1="3" x2="9" y2="21" />
 				</svg>
 			</button>
 		{/if}
@@ -46,34 +55,72 @@
 
 	<nav class="sidebar-nav">
 		<a href="/" class="nav-link active">
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-				<polyline points="9 22 9 12 15 12 15 22"/>
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+				<polyline points="9 22 9 12 15 12 15 22" />
 			</svg>
 			{#if !collapsed}<span>Dashboard</span>{/if}
 		</a>
 		<a href="/" class="nav-link">
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/>
-				<circle cx="9" cy="7" r="4"/>
-				<path d="M23 21v-2a4 4 0 00-3-3.87"/>
-				<path d="M16 3.13a4 4 0 010 7.75"/>
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2" />
+				<circle cx="9" cy="7" r="4" />
+				<path d="M23 21v-2a4 4 0 00-3-3.87" />
+				<path d="M16 3.13a4 4 0 010 7.75" />
 			</svg>
 			{#if !collapsed}<span>Guests</span>{/if}
 		</a>
 		<a href="/" class="nav-link">
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-				<line x1="16" y1="2" x2="16" y2="6"/>
-				<line x1="8" y1="2" x2="8" y2="6"/>
-				<line x1="3" y1="10" x2="21" y2="10"/>
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+				<line x1="16" y1="2" x2="16" y2="6" />
+				<line x1="8" y1="2" x2="8" y2="6" />
+				<line x1="3" y1="10" x2="21" y2="10" />
 			</svg>
 			{#if !collapsed}<span>Events</span>{/if}
 		</a>
 		<a href="/" class="nav-link">
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<circle cx="12" cy="12" r="3"/>
-				<path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<circle cx="12" cy="12" r="3" />
+				<path
+					d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"
+				/>
 			</svg>
 			{#if !collapsed}<span>Settings</span>{/if}
 		</a>
@@ -81,10 +128,19 @@
 
 	<div class="sidebar-footer">
 		<a href="/" class="nav-link">
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-				<polyline points="16 17 21 12 16 7"/>
-				<line x1="21" y1="12" x2="9" y2="12"/>
+			<svg
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+				<polyline points="16 17 21 12 16 7" />
+				<line x1="21" y1="12" x2="9" y2="12" />
 			</svg>
 			{#if !collapsed}<span>Logout</span>{/if}
 		</a>
@@ -164,7 +220,9 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		transition: color 0.2s, background 0.2s;
+		transition:
+			color 0.2s,
+			background 0.2s;
 	}
 
 	.toggle-btn:hover {
@@ -190,7 +248,9 @@
 		border-radius: 10px;
 		font-size: 14px;
 		font-weight: 500;
-		transition: background 0.2s, color 0.2s;
+		transition:
+			background 0.2s,
+			color 0.2s;
 		white-space: nowrap;
 	}
 

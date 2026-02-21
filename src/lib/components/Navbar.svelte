@@ -138,10 +138,6 @@
 		.navbar-inner {
 			padding: 12px 20px;
 		}
-		.nav-logo {
-			width: 38px;
-			height: 38px;
-		}
 		.nav-title {
 			font-size: 17px;
 		}
@@ -150,23 +146,16 @@
 	@media (min-width: 768px) {
 		.navbar-inner {
 			padding: 14px 24px;
+			max-width: none;
 		}
 		.nav-logo {
-			width: 42px;
-			height: 42px;
-			border-radius: 10px;
+			display: none;
 		}
 		.nav-title {
 			font-size: 19px;
 		}
 		.scan-btn-desktop {
 			display: flex;
-		}
-		.navbar-inner.sidebar-expanded {
-			max-width: 1400px;
-		}
-		.navbar-inner.sidebar-collapsed {
-			max-width: 1600px;
 		}
 	}
 </style>

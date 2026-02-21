@@ -18,6 +18,10 @@
 	let resultMessage = $state('');
 	let showResult = $state(false);
 	let cameraActive = $state(false);
+	let scanLocked = false;
+	let resumeTimer: ReturnType<typeof setTimeout> | null = null;
+
+	const RESUME_DELAY_MS = 3000;
 
 	async function startCamera() {
 		if (!browser) return;
@@ -59,55 +63,85 @@
 	}
 
 	async function onScanSuccess(decodedText: string) {
+		// Prevent duplicate scans while processing or during cooldown
+		if (scanLocked) return;
+		scanLocked = true;
+
 		await stopCamera();
 		scannerStatus = 'scanning';
-		statusText = 'Sending data...';
+		statusText = 'Verifying...';
+		showResult = false;
 
 		try {
-			await fetch('/api/mark-attendance', {
+			const res = await fetch('/api/mark-attendance', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ qrContent: decodedText })
 			});
+			const data = await res.json();
 
-			scannerStatus = 'success';
-			statusText = 'Scan successful!';
-			resultTitle = 'Attendance Recorded';
-			resultMessage = decodedText;
-			showResult = true;
+			if (data.success) {
+				scannerStatus = 'success';
+				statusText = 'Attendance recorded!';
+				resultTitle = data.name || 'Attendance Recorded';
+				resultMessage = 'Successfully checked in';
 
-			// Increment scan count
-			if (browser) {
-				const count = parseInt(localStorage.getItem('scanCount') || '0') + 1;
-				localStorage.setItem('scanCount', String(count));
-			}
-
-			// Reload guests after delay
-			setTimeout(() => {
+				if (browser) {
+					const count = parseInt(localStorage.getItem('scanCount') || '0') + 1;
+					localStorage.setItem('scanCount', String(count));
+				}
 				onSuccess();
-			}, 1000);
-		} catch (err) {
+			} else {
+				scannerStatus = 'error';
+				const msg = (data.message || '').toLowerCase();
+				if (
+					msg.includes('not found') ||
+					msg.includes('not registered') ||
+					msg.includes('not pre-registered')
+				) {
+					resultTitle = 'Not Pre-registered';
+					resultMessage = 'This QR code is not on the guest list';
+				} else if (msg.includes('already') || msg.includes('duplicate')) {
+					resultTitle = 'Already Checked In';
+					resultMessage = data.name
+						? `${data.name} has already attended`
+						: 'This guest has already been scanned';
+				} else {
+					resultTitle = 'QR Not Recognized';
+					resultMessage = 'Could not process this QR code';
+				}
+				statusText = resultTitle;
+			}
+		} catch {
 			scannerStatus = 'error';
-			statusText = 'Scan failed';
-			resultTitle = 'Error';
-			resultMessage = String(err);
-			showResult = true;
+			statusText = 'Connection error';
+			resultTitle = 'Connection Error';
+			resultMessage = 'Could not reach the server';
 		}
+
+		showResult = true;
+
+		// Auto-resume camera after delay, unlock for next scan
+		resumeTimer = setTimeout(async () => {
+			showResult = false;
+			scannerStatus = 'scanning';
+			statusText = 'Point camera at a QR code';
+			resultTitle = '';
+			resultMessage = '';
+			scanLocked = false;
+			await startCamera();
+		}, RESUME_DELAY_MS);
 	}
 
 	async function handleClose() {
+		if (resumeTimer) {
+			clearTimeout(resumeTimer);
+			resumeTimer = null;
+		}
+		scanLocked = false;
 		await stopCamera();
 		open = false;
 		onClose();
-	}
-
-	async function scanAnother() {
-		showResult = false;
-		scannerStatus = 'scanning';
-		statusText = 'Point camera at a QR code';
-		resultTitle = '';
-		resultMessage = '';
-		await startCamera();
 	}
 
 	$effect(() => {
@@ -174,10 +208,7 @@
 			{/if}
 
 			<div class="action-buttons">
-				{#if showResult}
-					<button class="btn-scan-another" onclick={scanAnother}>Scan Another</button>
-				{/if}
-				<button class="btn-cancel" onclick={handleClose}>Cancel</button>
+				<button class="btn-cancel" onclick={handleClose}>Close</button>
 			</div>
 		</div>
 	</div>
